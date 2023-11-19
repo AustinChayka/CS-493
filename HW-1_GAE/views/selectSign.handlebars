@@ -1,0 +1,10 @@
+<h2>Enter your zodiac to see what goblin you are!</h2>
+<form action="/goblin_result" method="post">
+    <label for="sign">Select your Zodiac:</label>
+    <select id="sign" name="sign">
+        {{#each zodiacs}}
+            <option value="{{this}}">{{this}}</option>
+        {{/each}}
+    </select>
+    <input type="submit">
+</form> 

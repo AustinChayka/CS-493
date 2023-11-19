@@ -1,0 +1,33 @@
+.data_container {
+    margin: auto;
+    display: inline-block;
+    justify-content: center;
+    align-items: center;
+    border-radius: .5vw;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.name_data, .state_data {
+    font-weight: 700;
+    font-size: xx-large;
+    padding: 1vw;
+}
+
+.name_container {
+    background-color: #f2e9e4;
+    border-radius: .5vw .5vw 0 0;
+}
+
+.name_data {
+    display: flex;
+    flex-direction: row;
+}
+
+.data_label {
+    color: #22223b;
+    margin-right: 1vw;
+}
+
+.data {
+    color: #4a4e69;
+}
