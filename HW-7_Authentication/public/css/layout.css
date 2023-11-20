@@ -1,0 +1,20 @@
+body {
+    padding: 0;
+    margin: 0;
+}
+
+.page {
+    display: flex;
+    justify-content: center;
+    padding: 2vw;
+}
+
+.title {
+    font-weight: 700;
+    font-size: xx-large;
+    padding: 1vw;
+    text-align: center;
+    background-color: #9a8c98;
+    color: white;
+    margin: auto;
+}

@@ -1,10 +1,26 @@
 const express = require('express');
 const app = express();
 const api = require('./routes/api.js');
-const login = require('./routes/login.js');
+const handlebars = require('express-handlebars');
 require('dotenv').config();
 
+const { auth } = require('express-openid-connect');
+
+const config = {
+    authRequired: false,
+    auth0Logout: true,
+    baseURL: 'http://localhost:8000',
+    clientID: process.env.CLIENT_ID,
+    issuerBaseURL: `https://${process.env.DOMAIN}`,
+    secret: process.env.secret
+};
+
+app.engine('handlebars', handlebars.engine({
+    defaultLayout: 'main'
+}));
+app.set('view engine', 'handlebars');
 app.enable('trust proxy');
+app.use(express.static('public'));
 app.use(express.json());
 
 app.use((req, res, next) => {
@@ -16,18 +32,21 @@ app.use((req, res, next) => {
     next();
 });
 
-app.use('/login', login);
+app.use(auth(config));
 app.use(api);
 
 app.get('/', (req, res) => {
-    res.send('Home Page');
+    if(req.oidc.isAuthenticated())
+        res.send(req.oidc.idToken);
+    else
+        res.render('home');
 });
 
 app.get('/*', (req, res) => {
     res.error(404, 'Route not found');
 });
 
-const PORT = process.env.port || 8080;
+const PORT = process.env.port || 8000;
 app.listen(PORT, () => {
     console.log("Server open on port: " + PORT);
 });
