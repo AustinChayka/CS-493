@@ -1,0 +1,18 @@
+.loginButton {
+    margin: 1vw;
+    font-weight: 500;
+    font-size: large;
+    background-color: darkslategray;
+    color: wheat;
+    border-radius: .5vw;
+    padding: .5vw;
+    border-style: none;
+}
+
+.loginButton:hover {
+    background-color: darkcyan;
+}
+
+.loginButton:active {
+    background-color: gray;
+}

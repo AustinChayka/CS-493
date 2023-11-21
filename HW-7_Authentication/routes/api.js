@@ -39,7 +39,7 @@ boat_subRouter.route('/')
         });
     })
     .post(async (req, res) => {
-        if(!req.auth || req.auth === null) res.error(401, 'Invalid JWT');
+        if(!req.auth || req.auth === null) res.error(401, 'Invalid or missing JWT');
         else if(!req.body.hasOwnProperty('name') || !req.body.hasOwnProperty('type') || !req.body.hasOwnProperty('length') || !req.body.hasOwnProperty('public')) res.error(400, 'Request body missing attribute(s)');
         else {
             const boat = newBoat(req.body.name, req.body.type, req.body.length, req.body.public, req.auth.sub);
@@ -52,8 +52,17 @@ boat_subRouter.route('/')
 boat_subRouter.route('/:bid')
     .get(async (req, res) => {
         const boat = await dm.getItem(dm.BOAT, req.params.bid);
-        if(boat === null || (!boat.public && (!req.auth || req.auth === null || req.auth.sub !== boat.owner))) res.error(404, 'Boat not found');
+        if(boat === null || (!boat.public && (!req.auth || req.auth === null || req.auth.sub !== boat.owner))) res.error(403, 'Cannot find boat with this ID');
         else res.status(200).json(util.formatItem(boat, req, 'boats'));
+    })
+    .delete(async (req, res) => {
+        const boat = await dm.getItem(dm.BOAT, req.params.bid);
+        if(!req.auth || req.auth === null) res.error(401, 'Invalid or missing JWT');
+        else if(boat === null || req.auth.sub !== boat.owner) res.error(403, 'Cannot find boat with this ID');
+        else {
+            await dm.deleteItem(dm.BOAT, req.params.bid);
+            res.status(204).end();
+        }
     });
 
 owners_subRouter.route('/:oid/boats')

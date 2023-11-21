@@ -12,7 +12,7 @@ const config = {
     baseURL: 'http://localhost:8000',
     clientID: process.env.CLIENT_ID,
     issuerBaseURL: `https://${process.env.DOMAIN}`,
-    secret: process.env.secret
+    secret: process.env.SECRET
 };
 
 app.engine('handlebars', handlebars.engine({
@@ -35,11 +35,19 @@ app.use((req, res, next) => {
 app.use(auth(config));
 app.use(api);
 
-app.get('/', (req, res) => {
-    if(req.oidc.isAuthenticated())
-        res.send(req.oidc.idToken);
-    else
-        res.render('home');
+app.get('/', async (req, res) => {
+    if(req.oidc.isAuthenticated()) {
+        res.render('user_info', {
+            data: {
+                nickname: req.oidc.user.nickname,
+                jwt: req.oidc.idToken
+            },
+            css: ['user_info.css']
+        });
+    } else
+        res.render('home', {
+            css: ['home.css']
+        });
 });
 
 app.get('/*', (req, res) => {
