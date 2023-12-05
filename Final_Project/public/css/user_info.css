@@ -1,0 +1,58 @@
+.infoWrapper {
+    border-radius: .5vw;
+    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
+}
+
+.JWTWrapper, .welcomeWrapper {
+    font-weight: 500;
+    font-size: large;
+    padding: 1vw;
+}
+
+.JWTWrapper {
+    word-wrap: break-word;
+}
+
+.welcomeWrapper {
+    background-color: darkslategray;
+    color: wheat;
+    border-radius: .5vw .5vw 0 0;
+}
+
+.copyButton, .logoutButton {
+    margin: 1vw;
+    font-weight: 500;
+    font-size: large;
+    background-color: darkslategray;
+    color: wheat;
+    border-radius: .5vw;
+    padding: .5vw;
+    border-style: none;
+    width: 5vw;
+}
+
+.logoutButton:hover {
+    background-color: darkcyan;
+}
+
+.logoutButton:active {
+    background-color: gray;
+}
+
+.copyButton:hover {
+    background-color: darkcyan;
+}
+
+.copyButton:active {
+    background-color: gray;
+}
+
+#JWT {
+    color: grey;
+}
+
+.pageWrapper {
+    display: flex;
+    flex-direction: column;
+    width: 80%;
+}

@@ -1,0 +1,23 @@
+<div class="pageWrapper">
+    <div class="infoWrapper">
+        <div class="welcomeWrapper">
+            Welcome {{data.nickname}}!
+        </div>
+        <div class="JWTWrapper">
+            Your JWT is: <div id="JWT">{{data.jwt}}</div>
+        </div>
+        <button class="copyButton" onclick="copyContent()">Copy JWT</button>
+    </div>
+    <button class="logoutButton" onclick="window.location='/logout';">Logout</button>
+</div>
+<script>
+    let text = document.getElementById('JWT').innerHTML;
+    const copyContent = async () => {
+        try {
+            await navigator.clipboard.writeText(text);
+            alert("JWT Coppied!");
+        } catch (err) {
+            alert("Error Copying!")
+        }
+    }
+</script>
