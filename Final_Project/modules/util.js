@@ -3,6 +3,9 @@ const {querySelect} = require('./data_manager.js');
 const { expressjwt: jwt } = require('express-jwt');
 const jwksRsa = require('jwks-rsa');
 
+const CONTENT_TYPE = 'application/json';
+const ACCEPTABLE_TYPES = ['application/json']
+
 const buildURL = (req, path) => {
     return req.protocol + '://' + req.get('host') + '/api/' + path;
 }
@@ -81,6 +84,25 @@ const filterVerified = (items) => {
     });
 }
 
+const checkContentType = (req, res, next) => {
+    if(req.get('content-type') !== CONTENT_TYPE)
+        res.error(415, 'Wrong content type');
+    else
+        next();
+}
+
+const checkAccepts = (req, res, next) => {
+    const accepts = req.accepts(ACCEPTABLE_TYPES);
+    if(!accepts)
+        res.status(406).json({
+            'Error': 'Not acceptable'
+        });
+    else {
+        res.locals.accepts = accepts;
+        next();
+    }
+}
+
 module.exports = {
     buildURL, 
     formatItem, 
@@ -89,5 +111,7 @@ module.exports = {
     checkJWT, 
     enforceJWT, 
     trim,
-    filterVerified
+    filterVerified,
+    checkContentType,
+    checkAccepts
 }

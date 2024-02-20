@@ -1,7 +1,7 @@
 const {Datastore, PropertyFilter} = require('@google-cloud/datastore');
 const datastore = new Datastore();
 
-const PAGE_SIZE = 6;
+const PAGE_SIZE = 5;
 
 const fromDatastore = (item) => {
     item.id = item[Datastore.KEY].id;

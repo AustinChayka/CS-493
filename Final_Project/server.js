@@ -3,6 +3,8 @@ const express = require('express');
 const app = express();
 const { auth } = require('express-openid-connect');
 const handlebars = require('express-handlebars');
+const dm = require('./modules/data_manager.js');
+const {users_config, newUser} = require('./modules/data.js');
 
 const URL = (process.argv.indexOf('--local') > -1) ? 'http://localhost:8080' : 'https://cs493-finalproject-406222.uw.r.appspot.com';
 
@@ -37,6 +39,8 @@ app.use('/api', require('./api/index.js'));
 
 app.get('/', async (req, res) => {
     if(req.oidc.isAuthenticated()) {
+        const results = await dm.querySelect(users_config.key, 'username', '=', req.oidc.user.nickname);
+        if(results.items.length === 0) dm.postItem(users_config.key, newUser(req.oidc.user.sub, req.oidc.user.nickname));
         res.render('user_info', {
             data: {
                 nickname: req.oidc.user.nickname,

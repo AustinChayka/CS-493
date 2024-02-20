@@ -1,7 +1,7 @@
 const express = require('express');
 const util = require('../modules/util.js');
 const dm = require('../modules/data_manager.js');
-const {newMeta, families_config, genera_config, species_config} = require('../modules/data.js');
+const {newMeta, families_config, genera_config} = require('../modules/data.js');
 
 const router = express.Router();
 
@@ -16,7 +16,7 @@ router.use((err, req, res, next) => {
 });
 
 router.route('/')
-    .get(async (req, res) => {
+    .get(util.checkAccepts, async (req, res) => {
         let cursor = null;
         if(Object.keys(req.query).includes('cursor')) cursor = req.query.cursor;
         const results = await dm.getPage(families_config.key, cursor);
@@ -49,11 +49,11 @@ router.route('/')
         if(results.nextCursor !== null) responseJSON.next = util.buildURL(req, families_config.path + '?cursor=' + results.nextCursor);
         res.status(200).send(responseJSON);
     })
-    .post((req, res, next) => util.validateData(req, res, next, families_config.property_filters), util.enforceJWT, async (req, res) => {
+    .post(util.checkContentType, (req, res, next) => util.validateData(req, res, next, families_config.property_filters), util.enforceJWT, async (req, res) => {
         const item = families_config.constructor(req.auth.sub, req.body);
         const item_key = await dm.postItem(families_config.key, item);
         util.formatItem(item, req, families_config.path, families_config.id_prefix + item_key.id)
-        res.status(200).json(item);
+        res.status(201).json(item);
     })
     .patch((req, res) => {
         res.set('Accept', 'GET, POST');
@@ -70,7 +70,7 @@ router.route('/')
 
 router.route('/:identifier')
     .all((req, res, next) => util.checkIdentifier(req, res, next, families_config.id_prefix, families_config.key))
-    .get(async (req, res) => {
+    .get(util.checkAccepts, async (req, res) => {
         const item = await dm.getItem(families_config.key, res.locals.id);
         if(item === null) res.error(404, 'Not found');
         else {
@@ -98,7 +98,7 @@ router.route('/:identifier')
         res.set('Accept', 'GET, PATCH, PUT, DELETE');
         res.error(405, 'Forbidden operation');
     })
-    .patch((req, res, next) => {
+    .patch(util.checkContentType, (req, res, next) => {
             let soft_filters = families_config.property_filters.map((property_filter) => {
                 let newFilter = property_filter;
                 newFilter.required = false;
@@ -108,10 +108,11 @@ router.route('/:identifier')
         }, util.enforceJWT, async (req, res) => {
         const item = await dm.getItem(families_config.key, res.locals.id);
         if(item === null) {
-            res.error(404, 'Not Found');
+            res.error(404, 'Not found');
             return;
         } else if(item.meta && item.meta.owner !== req.auth.sub) {
             res.error(403, 'Forbidden');
+            return;
         }
         if(req.body.hasOwnProperty('name')) item.name = req.body.name;
         if(req.body.hasOwnProperty('verified')) item.verified = req.body.verified;
@@ -120,13 +121,14 @@ router.route('/:identifier')
         await dm.putItem(families_config.key, res.locals.id, item);
         res.status(204).end();
     })
-    .put((req, res, next) => util.validateData(req, res, next, families_config.property_filters), util.enforceJWT, async (req, res) => {
+    .put(util.checkContentType, (req, res, next) => util.validateData(req, res, next, families_config.property_filters), util.enforceJWT, async (req, res) => {
         const item = await dm.getItem(families_config.key, res.locals.id);
         if(item === null) {
-            res.error(404, 'Not Found');
+            res.error(404, 'Not found');
             return;
         } else if(item.meta && item.meta.owner !== req.auth.sub) {
             res.error(403, 'Forbidden');
+            return;
         }
         item.name = req.body.name;
         if(req.body.hasOwnProperty('verified')) item.verified = req.body.verified;
@@ -137,18 +139,19 @@ router.route('/:identifier')
     })
     .delete(util.enforceJWT, async (req, res) => {
         const item = await dm.getItem(families_config.key, res.locals.id);
+        if(item === null) {
+            res.error(404, 'Not found');
+            return;
+        } else if(item.meta && item.meta.owner !== req.auth.sub) {
+            res.error(403, 'Forbidden')
+            return;
+        }
         await Promise.all(item.genera.map(async (sid) => {
             let id = sid.slice(3);
             let genus = await dm.getItem(genera_config.key, id);
             genus.family = null;
             await dm.putItem(genera_config.key, id, genus);
         }));
-        if(item === null) {
-            res.error(404, 'Not Found');
-            return;
-        } else if(item.meta && item.meta.owner !== req.auth.sub) {
-            res.error(403, 'Forbidden')
-        }
         await dm.deleteItem(families_config.key, res.locals.id);
         res.status(204).end();
     })
@@ -156,7 +159,7 @@ router.route('/:identifier')
     
     router.route('/:identifier/' + genera_config.path)
         .all((req, res, next) => util.checkIdentifier(req, res, next, families_config.id_prefix, families_config.key))
-        .get(async (req, res) => {
+        .get(util.checkAccepts, async (req, res) => {
             let cursor = null;
             if(Object.keys(req.query).includes('cursor')) cursor = req.query.cursor;
             const results = await dm.querySelect(genera_config.key, 'family', '=', families_config.id_prefix + res.locals.id, cursor);
@@ -180,15 +183,19 @@ router.route('/:identifier')
             if(results.nextCursor !== null) responseJSON.next = util.buildURL(req, genera_config.path + '?cursor=' + results.nextCursor);
             res.status(200).send(responseJSON);
         })
-        .post((req, res, next) => util.validateData(req, res, next, genera_config.property_filters), util.enforceJWT, async (req, res) => {
+        .post(util.checkContentType, (req, res, next) => util.validateData(req, res, next, genera_config.property_filters), util.enforceJWT, async (req, res) => {
+            let parent = await dm.getItem(families_config.key, res.locals.id);
+            if(parent === null) {
+                res.error(404, 'Not found');
+                return;
+            }
             let item = genera_config.constructor(req.auth.sub, req.body);
             item['family'] = families_config.id_prefix + res.locals.id;
             const item_key = await dm.postItem(genera_config.key, item);
-            let parent = await dm.getItem(families_config.key, res.locals.id);
             parent['genera'].push(genera_config.id_prefix + item_key.id);
             await dm.putItem(families_config.key, res.locals.id, parent);
             util.formatItem(item, req, genera_config.path, genera_config.id_prefix + item_key.id)
-            res.status(200).json(item);
+            res.status(201).json(item);
         })
         .patch((req, res) => {
             res.set('Accept', 'GET, POST');
@@ -230,6 +237,7 @@ router.route('/:identifier')
             }
             if(family.meta.owner && req.auth.sub !== family.meta.owner || genus.meta.owner && req.auth.sub !== genus.meta.owner) {
                 res.error(403, 'Forbidden');
+                return;
             }
             family.genera.push(genera_config.id_prefix + res.locals.subid);
             genus.family = families_config.id_prefix + res.locals.id;
@@ -252,6 +260,7 @@ router.route('/:identifier')
             }
             if(family.meta.owner && req.auth.sub !== family.meta.owner || genus.meta.owner && req.auth.sub !== genus.meta.owner) {
                 res.error(403, 'Forbidden');
+                return;
             }
             const index = family.genera.indexOf(genera_config.id_prefix + res.locals.subid);
             if (index > -1) { 

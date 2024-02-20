@@ -2,6 +2,14 @@ const dm = require('./data_manager.js');
 
 const DIAGNOSTIC_FEATURES_LIMIT = 256;
 
+const newUser = (user_id, username) => {
+    return {
+        user_id: user_id,
+        username: username,
+        created: Date.now()
+    }
+}
+
 const newMeta = (user_id) => {
     return {
         owner: user_id,
@@ -41,24 +49,31 @@ const newSpecies = (user_id, data_body) => {
         name: data_body.name,
         diagnostic_features: '',
         genus: null,
+        observations: [],
         common_names: data_body.hasOwnProperty('common_names') ? data_body.common_names : [],
         verified: data_body.hasOwnProperty('verified') ? data_body.verified : false,
         meta: newMeta(user_id)
     }
 }
 
-const newObservation = (user_id, data_body, species_id=null, genus_id=null, family_id=null) => {
+const newObservation = (user_id, data_body, species_id=null) => {
     const id = -1;
+    let meta = newMeta(user_id);
+    meta.public = data_body.hasOwnProperty('public') ? data_body.public : true;
     return {
         id: id,
         species: species_id,
-        genus: genus_id,
-        family: family_id,
         verified: data_body.hasOwnProperty('verified') ? data_body.verified : false,
         location: data_body.location,
         image: data_body.hasOwnProperty('image_url') ? data_body.image_url : null,
-        meta: newMeta(user_id)
+        meta: meta
     }
+}
+
+const users_config = {
+    path: 'users',
+    key: 'USER',
+    id_prefix: 'USR'
 }
 
 const families_config = {
@@ -72,9 +87,9 @@ const families_config = {
             filters: [
                 {
                     filter_function: (name) => {
-                        return name.slice(-5) === 'aceae'
+                        return typeof name === 'string'
                     },
-                    error_message: "family name must end in 'aceae'"
+                    error_message: "family name must be a string'"
                 },
                 {
                     filter_function: (name) => {
@@ -136,6 +151,12 @@ const genera_config = {
             filters: [
                 {
                     filter_function: (name) => {
+                        return typeof name === 'string'
+                    },
+                    error_message: "genus name must be a string'"
+                },
+                {
+                    filter_function: (name) => {
                         return !/[^a-z]/i.test(name);
                     },
                     error_message: 'genus name must only contain letters'
@@ -192,6 +213,12 @@ const species_config = {
             target_property: 'name',
             required: true,
             filters: [
+                {
+                    filter_function: (name) => {
+                        return typeof name === 'string'
+                    },
+                    error_message: "species name must be a string'"
+                },
                 {
                     filter_function: (name) => {
                         return !/[^a-z]/i.test(name);
@@ -265,7 +292,7 @@ const species_config = {
 const observations_config = {
     path: 'observations',
     id_prefix: 'OBS',
-    key: 'Observation',
+    key: 'OBSERVATION',
     property_filters: [
         {
             target_property: 'location',
@@ -314,9 +341,21 @@ const observations_config = {
                     error_message: 'image url must be string'
                 }
             ]
-        }
+        },
+        {
+            target_property: 'public',
+            required: false,
+            filters: [
+                {
+                    filter_function: (public) => {
+                        return typeof public === 'boolean';
+                    },
+                    error_message: 'public must be boolean'
+                }
+            ]
+        },
     ],
     constructor: newObservation,
 }
 
-module.exports = {newMeta, families_config, genera_config, species_config, observations_config}
+module.exports = {newMeta, families_config, genera_config, species_config, observations_config, newUser, users_config}
